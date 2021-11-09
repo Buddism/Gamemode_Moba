@@ -1,22 +1,25 @@
-$Server::Moba::BotDenyThreshold = 0.85;
+$Server::Moba::DenyThreshold = 0.85;
 $Server::Moba::GoldPerHealthPoint = 0.25;
 $Server::Moba::ExperienceArea = 100;
+$Server::Moba::CreepHealthXP = 0.65;
+$Server::Moba::HeroBaseXP = 100;
+$Server::Moba::HeroXPPerXP = 7.69;
 
 function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 {   
     %client = %objA;
-    %bot = %objB;
-    if(%client.getClassName() $= "GameConnection" && %bot.getClassName() $= "AIPlayer")
+    %other = %objB;
+    if(%client.getClassName() $= "GameConnection" && (%other.getClassName() $= "AIPlayer" || %other.getClassName() $= "GameConnection"))
     {
         %clientTeam = %client.getTeam().name;
-        %botTeam = %bot.hType;
+        %otherTeam = %other.getTeam().name;
 
-        if(%clientTeam $= %botTeam)
+        if(%clientTeam $= %otherTeam)
         {
-            %percent = %bot.getDamagePercent();
+            %percent = %other.getDamagePercent();
 
             //are we within threshold?
-            if($Server::Moba::BotDenyThreshold <= %percent)
+            if($Server::Moba::DenyThreshold <= %percent)
             {
                 return true;
             }
@@ -36,7 +39,7 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 
 package mobaKills
 {
-    function giveAreaXp(%team,%epicenter,%ammount)
+    function giveAreaXp(%team,%epicenter,%ammount,%inverse)
     {
         %poolC = 0;
         %minigame = %team.minigame;
@@ -44,7 +47,7 @@ package mobaKills
         for(%i = 0; %i < %numMembers; %i++)
         {
             %client = %minigame.member[%i];
-            if(%client.getTeam() $= %team)
+            if((!%inverse && (%client.getTeam() $= %team)) || (%inverse && (%client.getTeam() $= %team)))
             {
                 %player = %client.player;
 
@@ -70,45 +73,6 @@ package mobaKills
         }
     }
 
-    function getHudElement(%client,%name)
-    {
-        %minigame = getMinigameFromObject(%client);
-        if(%minigame <= 0)
-        {
-            %client.BottomPrint("",0,true);
-            return;
-        }
-
-        %varGroup = nameToId("VariableGroup_" @ %minigame .creatorBLID);
-
-        %current = %varGroup.getVariable("Client",%name,%client);
-
-        return %current;
-    }
-
-    function setHudElement(%client,%name,%ammount)
-    {
-        %minigame = getMinigameFromObject(%client);
-        if(%minigame <= 0)
-        {
-            %client.BottomPrint("",0,true);
-            return;
-        }
-
-        %varGroup = nameToId("VariableGroup_" @ %minigame .creatorBLID);
-
-        %varGroup.setVariable("Client",%name,%ammount,%client);
-
-        %client.DisplayMobaHud();
-    }
-
-    function gainHudElement(%client,%name,%ammount)
-    {
-        %current = getHudElement(%client,%name);
-
-        setHudElement(%client,%name,%current + %ammount);
-    }
-
     function creepKilled(%sourceClient,%creep)
     {  
         %clientTeam = %sourceClient.getTeam().name;
@@ -117,22 +81,42 @@ package mobaKills
         %creepHealth = %creep.getmaxHealth();
 
         if(%clientTeam $= %creepTeam)
-        {
+        {   
+            %expGain = (%creepHealth * $Server::Moba::CreepHealthXP) / 2;
+
+            giveAreaXp(%sourceClient.getTeam(),%creep.getPosition(), %expGain,true);
             gainHudElement(%sourceClient,"denies",1);
         }
         else
         {
             %goldGain = %creepHealth * $Server::Moba::GoldPerHealthPoint;
+            %expGain = %creepHealth * $Server::Moba::CreepHealthXP;
             gainHudElement(%sourceClient,"gold",%goldGain);
-            giveAreaXp(%sourceClient.getTeam(),%creep.getPosition(),100);
+            giveAreaXp(%sourceClient.getTeam(),%creep.getPosition(),%expGain);
             gainHudElement(%sourceClient,"lastHits",1);
         }
     }
 
-    function playerKilled(%sourceClient,%client)
+    function playerKilled(%sourceClient,%client,%player)
     {
-        gainHudElement(%sourceClient,"lasthits",1);
-        //TODO: add gold and xp gain
+        %clientTeam = %sourceClient.getTeam().name;
+        %otherTeam = %client.getTeam().name;
+
+        if(%clientTeam $= %otherTeam)
+        {
+            gainHudElement(%sourceClient,"denies",1);
+        }
+        else
+        {
+            %position = %player.getPosition();
+
+            %maxHealth = %player.getMaxHealth();
+            %exp = getHudElement(%client,"exp");
+
+            gainHudElement(%sourceClient,"lasthits",1);
+            giveAreaXp(%sourceClient.getTeam(),%position,%exp / $Server::Moba::HeroXPPerXP + $Server::Moba::HeroBaseXP);
+        }
+        
     }
 
     function fxDTSBrick::onBotDeath(%obj)
@@ -148,11 +132,32 @@ package mobaKills
         parent::onBotDeath(%obj,%sourceClient);
     }
 
+    function ShapeBase::setMaxHealth(%this, %maxHealth)
+    {
+        if(!isObject(%this))
+            return -1;
+
+        if(%maxHealth <= 0)
+            return false;
+
+        %this.maxHealth = mClampF(%maxHealth, 1, 999999);
+
+        %this.health = %this.maxHealth;
+        %this.oldMaxHealth = %this.maxHealth;
+        %this.oldHealth = %this.health;
+        %this.setDamageLevel(0);
+
+        return true;
+    }
+
     function GameConnection::onDeath(%client, %sourceObject, %sourceClient, %damageType, %damLoc)
     {
-        if(%client != %sourceClient && %sourceClient.getClassName() $= "GameConnection")
+        if(isObject(%sourceClient))
         {
-            playerKilled(%sourceClient,%client);
+            if(%client != %sourceClient && %sourceClient.getClassName() $= "GameConnection")
+            {
+                playerKilled(%sourceClient,%client,%client.player);
+            }
         }
 
         parent::onDeath(%client, %sourceObject, %sourceClient, %damageType, %damLoc);

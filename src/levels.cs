@@ -1,7 +1,23 @@
-$Server::Moba::StartingThreshold = 100;
-$Server::Moba::ThresholdMultiplier = 1.5;
-$Server::Moba::HealthMultiplier = 1.5;
-$Server::Moba::ManaMultiplier = 1.5;
+$Server::Moba::StartingThreshold = 230;
+$Server::Moba::ThresholdAddition = (3500 - $Server::Moba::StartingThreshold) / $Server::Moba::MaxLevel;
+$Server::Moba::MaxLevel = 25;
+$Server::Moba::HealthBase = 100;
+$Server::Moba::ManaBase = 100;
+$Server::Moba::StartingCoins = 200;
+
+function Slayer_Moba::onMinigameReset(%this, %client)
+{
+    %minigame = getMinigameFromObject(%client);
+    %numMembers = %minigame.numMembers;
+
+    for(%i = 0; %i < %numMembers; %i++)
+    {
+        %client = %minigame.member[%i];
+        schedule(100,%client,"resetPlayer",%client);
+    }
+}
+
+
 package MobaLevels
 {
     function resetPlayer(%client)
@@ -12,7 +28,9 @@ package MobaLevels
         setHudElement(%client,"lasthits",0);
         setHudElement(%client,"healthLevel",1);
         setHudElement(%client,"manaLevel",1);
-        setHudElement(%client,"gold",0);
+        setHudElement(%client,"healthLevelIncrease",1);
+        setHudElement(%client,"manaLevelIncrease",1);
+        setHudElement(%client,"gold",200);
         setHudElement(%client,"expthreshold",$Server::Moba::StartingThreshold);
 
         updateStats(%client);
@@ -20,18 +38,16 @@ package MobaLevels
 
     function checkLevelUp(%client)
     {
+        %level = getHudElement(%client,"level");
         %exp = getHudElement(%client,"exp");
         %expthreshold = getHudElement(%client,"expthreshold");
 
         while(%exp >= %expThreshold)
         {
-            gainHudElement(%client,"exp",-%expThreshold);
-            %exp -= %expthreshold;
-
-            %expThresholdGain = mFloor(%expThreshold * $Server::Moba::ThresholdMultiplier);
+            %expThresholdGain = %level * $Server::Moba::ThresholdAddition;
             
-            setHudElement(%client,"expThreshold",%expThresholdGain);
-            %expThresholdGain += %expThreshold;
+            gainHudElement(%client,"expThreshold",%expThresholdGain);
+            %expThreshold += %expThresholdGain;
 
             levelUp(%client);
         }
@@ -63,7 +79,8 @@ package MobaLevels
             return;
         }
 
-        %player.setMaxHealth(100 * %healthLevel * $Server::Moba::HealthMultiplier);
+        %player.setMaxHealth($Server::Moba::HealthBase * %healthLevel * getHudElement(%client,"healthLevelIncrease"));
+        %player.SetMaxEnergyLevel($Server::Moba::ManaBase * %manaLevel * getHudElement(%client,"manaLevelIncrease"));
         %client.DisplayMobaHud();
     }
 

@@ -6,6 +6,7 @@ else
 	exec("./src/kills.cs");
 	exec("./src/hud.cs");
 	exec("./src/levels.cs");
+	exec("./src/energy.cs");
 }
 
 //Create the game mode template.

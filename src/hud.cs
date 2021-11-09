@@ -1,8 +1,10 @@
+registerOutputEvent("GameConnection", "setAbilityCooldown", "string 100 140" TAB "int 0 999999999 5000");
+
 //display
 function GameConnection::DisplayMobaHud(%client)
 {
     %minigame = getMinigameFromObject(%client);
-    if(%minigame <= 0)
+    if(!isObject(%minigame))
     {
         %client.BottomPrint("",0,true);
         return;
@@ -15,23 +17,54 @@ function GameConnection::DisplayMobaHud(%client)
     {
         return;
     }
+
+    //center print
+    %abilityCount = %client.abilityCount;
+    %product = "";
+    for(%i = 0; %i < %abilityCount; %i++)
+    {  
+        %ability = %client.ability[%i,N];
+        if(%ability !$= "Ultimate")
+        {
+            %cooldown = %client.ability[%i,C];
+
+            %product = %product @ "\c7" @ mFloor((%cooldown - getSimTime()) / 1000) SPC ":" SPC %ability @ "<br>";
+        }
+    }
+
+    %client.centerprint("<just:right>" @ %product,0);
     
+    //bottom print
     %maxHealth = mFloor(%player.getMaxHealth());
-    %curhealth = mFloor(%player.getHealthLevel());
+    %curhealth = mFloor(%player.getHealth());
     %healthText = "\c2H " @ makeMobaValueBar(%curhealth,%maxHealth,"|||||||||||||||||||");
 
-    %curMana = 100;
-    %maxMana = 100;
+    %maxMana = mFloor(%client.leveling_maxenergy);
+    %curMana = mFloor(%player.GetEnergyLevel());
     %manaText = "\c4M " @ makeMobaValueBar(%curMana,%maxMana,"|||||||||||||||||||");
 
-    %ultimate = "\c3Ultimate";
-    %ulitmateText = %ultimate;
-
     %level = getHudElement(%client,"level");
+
+    if(%level >= 6)
+    {
+        %ultimateCooldown = %client.ability["Ultimate",N];
+        if(%ultimateCooldown)
+        {
+            %ultimate = "\c7" @ mFloor((%ultimateCooldown - getSimTime()) / 1000) @ " : Ultimate";
+        }
+        else
+        {
+            %ultimate = "\c3Ultimate Ready";
+        }
+        %ulitmateText = %ultimate;
+    }
+    
+
+    
     %levelText = "\c5Level:" SPC %level;
 
-    %exp = getHudElement(%client,"exp");
-    %expThreshold = getHudElement(%client,"expThreshold");
+    %exp = mFloor(getHudElement(%client,"exp"));
+    %expThreshold = mFloor(getHudElement(%client,"expThreshold"));
     %expText = "\c1Exp:" SPC %exp @ "/" @ %expThreshold;
 
     %lastHits = getHudElement(%client,"lastHits");
@@ -55,7 +88,7 @@ function Player::UpdateMobaShapeName(%player)
     %isBot = %player.isHoleBot;
 
     %maxHealth = mFloor(%player.getMaxHealth());
-    %currenthealth = mFloor(%maxHealth - %player.getDamageLevel());
+    %currenthealth = mFloor(%player.getHealth());
     %client = %player.client;
 
     if(%client)
@@ -87,8 +120,120 @@ function Player::UpdateMobaShapeName(%player)
     }
 }
 
+function GameConnection::AbilityCooldown(%client)
+{
+    cancel(%client.abilityCooldownLoop[%name]);
+
+    %client.DisplayMobaHud();
+
+    %count = %client.abilityCount;
+    if(%count > 0)
+    {
+        %client.abilityCooldownLoop = %client.schedule(100,"AbilityCooldown",%name);
+    }
+}
+
+function GameConnection::setAbilityCooldown(%client,%name,%cooldown)
+{
+    if(%client.ability[%name,N])
+    {
+        %client.removeAbilityCooldown(%name);
+    }
+    
+    %count = %client.abilityCount;
+
+    %client.ability[%name,N] = %cooldown + getSimTime();
+    %client.ability[%name,C] = %count;
+    
+    %client.ability[%count,C] = %client.ability[%name,N];
+    %client.ability[%count,N] = %name;
+
+    %client.abilityCount++;
+
+    %client.abilityCooldownLoop[%name] =  %client.schedule(0,"AbilityCooldown",%name);
+
+    cancel(%client.abilityCooldownStop[%name]);
+    %client.abilityCooldownStop[%name] =  %client.schedule(%cooldown,"removeAbilityCooldown",%name);
+}
+
+function GameConnection::removeAbilityCooldown(%client,%name)
+{
+    cancel(%client.abilityCooldownStop[%name]);
+
+    %num = %client.ability[%name,C];
+    %count = %client.abilityCount;
+
+    %client.ability[%name,N] = "";
+    %client.ability[%name,C] = "";
+
+    for(%i = %num + 1; %i < %count; %i++)
+    {
+        %client.ability[%i - 1,C] = %client.ability[%i,C];
+        %client.ability[%i - 1,N] = %client.ability[%i,N];
+
+        %currName = %client.ability[%i,N];
+        %client.ability[%currName,C] = %i - 1;
+
+        %client.ability[%i,C] = "";
+        %client.ability[%i,N] = "";
+    }
+
+    %client.abilityCount--;
+
+    %client.DisplayMobaHud();
+}
+
 package mobaHud 
 {
+    function getHudElement(%client,%name)
+    {
+        %minigame = getMinigameFromObject(%client);
+        if(%minigame <= 0)
+        {
+            %client.BottomPrint("",0,true);
+            return "";
+        }
+
+        %varGroup = nameToId("VariableGroup_" @ %minigame .creatorBLID);
+        if(%varGroup <= 0)
+        {
+            %client.BottomPrint("",0,true);
+            return "";
+        }
+
+        %current = %varGroup.getVariable("Client",%name,%client);
+
+        return %current;
+    }
+
+    function setHudElement(%client,%name,%ammount)
+    {
+        %minigame = getMinigameFromObject(%client);
+        if(%minigame <= 0)
+        {
+            %client.BottomPrint("",0,true);
+            return;
+        }
+
+        %varGroup = nameToId("VariableGroup_" @ %minigame .creatorBLID);
+        if(%varGroup <= 0)
+        {
+            %client.BottomPrint("",0,true);
+            return "";
+        }
+
+        %varGroup.setVariable("Client",%name,%ammount,%client);
+
+        %client.DisplayMobaHud();
+    }
+
+    function gainHudElement(%client,%name,%ammount)
+    {
+        %current = getHudElement(%client,%name);
+
+        setHudElement(%client,%name,%current + %ammount);
+    }
+
     function makeMobaValueBar(%curValue,%maxValue,%barText)
     {
         %valueText = %curValue @ "/" @ %maxValue;
