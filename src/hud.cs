@@ -201,7 +201,7 @@ package mobaHud
             return "";
         }
 
-        %current = %varGroup.getVariable("Client",%name,%client);
+        %current = %varGroup.getVariable(%name,%client);
 
         return %current;
     }
@@ -222,7 +222,7 @@ package mobaHud
             return "";
         }
 
-        %varGroup.setVariable("Client",%name,%ammount,%client);
+        %varGroup.setVariable(%name,%ammount,%client);
 
         %client.DisplayMobaHud();
     }
