@@ -4,7 +4,7 @@ registerOutputEvent("GameConnection", "setAbilityCooldown", "string 100 140" TAB
 function GameConnection::DisplayMobaHud(%client)
 {
     %minigame = getMinigameFromObject(%client);
-    if(!isObject(%minigame))
+    if(!isObject(%minigame) || %client.mobaHudEnabled)
     {
         %client.BottomPrint("",0,true);
         return;

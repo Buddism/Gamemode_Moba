@@ -134,6 +134,11 @@ package mobaKills
 
     function ShapeBase::setMaxHealth(%this, %maxHealth)
     {
+        if(!(%this.getType() & $TypeMasks::PlayerObjectType))
+        {
+            return parent::setMaxHealth(%this, %maxHealth);
+        }
+
         if(!isObject(%this))
             return -1;
 
@@ -142,10 +147,11 @@ package mobaKills
 
         %this.maxHealth = mClampF(%maxHealth, 1, 999999);
 
-        %this.health = %this.maxHealth;
+        %this.addHealth(%this.maxHealth - %this.oldMaxHealth);
+
         %this.oldMaxHealth = %this.maxHealth;
         %this.oldHealth = %this.health;
-        %this.setDamageLevel(0);
+        
 
         return true;
     }

@@ -5,8 +5,8 @@ function Player::SetMaxEnergyLevel(%player,%level)
     if(%level < 0)
         %level = 0;
 
+    %player.Leveling_energy += %level - %player.client.Leveling_maxenergy;
     %player.client.Leveling_maxenergy = %level;
-    %player.Leveling_energy = %level;
 }
 //replicates normal recharge functionality
 function Player::DoEnergyRecharge(%player)

@@ -7,6 +7,10 @@ else
 	exec("./src/hud.cs");
 	exec("./src/levels.cs");
 	exec("./src/energy.cs");
+	exec("./src/hitbox.cs");
+	exec("./src/tower.cs");
+	exec("./src/weapon.cs");
+	exec("./src/onRespawn.cs");
 }
 
 //Create the game mode template.
