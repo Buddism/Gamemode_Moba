@@ -1,9 +1,9 @@
-$Server::Moba::StartingThreshold = 230;
-$Server::Moba::ThresholdAddition = (3500 - $Server::Moba::StartingThreshold) / $Server::Moba::MaxLevel;
 $Server::Moba::MaxLevel = 25;
+$Server::Moba::StartingThreshold = 230;
+$Server::Moba::ThresholdAddition = 40;//(3500 - $Server::Moba::StartingThreshold) / $Server::Moba::MaxLevel;
 $Server::Moba::HealthBase = 100;
 $Server::Moba::ManaBase = 100;
-$Server::Moba::StartingCoins = 200;
+$Server::Moba::StartingCoins = 625;
 
 function Slayer_Moba::onMinigameReset(%this, %client)
 {
@@ -44,9 +44,11 @@ package MobaLevels
 
         while(%exp >= %expThreshold)
         {
-            %expThresholdGain = %level * $Server::Moba::ThresholdAddition;
+            %expThresholdGain = $Server::Moba::ThresholdAddition;//%level * $Server::Moba::ThresholdAddition;
             
             gainHudElement(%client,"expThreshold",%expThresholdGain);
+						setHudElement(%client,"exp", %exp - %expThreshold);
+						%exp -= %expThreshold;
             %expThreshold += %expThresholdGain;
 
             levelUp(%client);

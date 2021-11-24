@@ -74,7 +74,8 @@ function GameConnection::DisplayMobaHud(%client)
     %coins =  getHudElement(%client,"gold");
     %coinsText = "\c3Coins:" SPC %coins;
 
-    %client.bottomPrint(%healthText @ "<just:center>" @ %ulitmateText @ "<just:right>" @ %levelText @ "<br><just:left>" @ %manaText @ "<just:right>" @ %expText @ "<br><just:left>" @ %ldText @ "<just:right>" @ %coinsText,-1,true);
+    %client.bottomPrint(%healthText @ "<just:center>" @ %ulitmateText @ "<just:right>" @ %levelText @ "<br><just:left>" @ %manaText @ "<just:right>" @
+												%expText @ "<br><just:left>" @ %ldText @ "<just:right>" @ %coinsText,-1,true);
 }
 
 function Player::UpdateMobaShapeName(%player)
@@ -185,6 +186,34 @@ function GameConnection::removeAbilityCooldown(%client,%name)
 
 package mobaHud 
 {
+		function GameConnection::mobaHudLoop(%cl)
+		{
+			cancel(%cl.hudLoop);
+			
+			%minigame = getMinigameFromObject(%cl);
+			if(!isObject(%minigame) || %cl.mobaHudEnabled)
+			{
+					%cl.BottomPrint("",0,true);
+					return;
+			}
+			
+			// %lvl = getHudElement(%cl, "level");
+			// %exp = getHudElement(%cl, "exp");
+			// %max = getHudElement(%cl, "expThreshold");
+
+			// if(%exp >= %max)
+			// {
+			// 	gainHudElement(%cl, "level", 1);
+			// 	gainHudElement(%cl, "exp", %exp*-1);
+			// }
+
+			checkLevelUp(%cl);
+
+			%cl.DisplayMobaHud();
+
+			%cl.hudLoop = %cl.schedule(200, mobaHudLoop);
+		}
+
     function getHudElement(%client,%name)
     {
         %minigame = getMinigameFromObject(%client);
@@ -265,7 +294,7 @@ package mobaHud
 
         if(%client)
         {
-            %client.schedule(100,"DisplayMobaHud");
+            %client.schedule(100,"mobaHudLoop");
             %obj.schedule(100,"UpdateMobaShapeName");
         }
 
