@@ -1,7 +1,7 @@
 registerInputEvent("fxDTSBrick","onHitBoxDestroyed","self fxDTSBrick" TAB "Player Player" TAB "Client GameConnection" TAB "Minigame Minigame");
 registerInputEvent("fxDTSBrick","onHitBoxHit","self fxDTSBrick" TAB "Player Player" TAB "Client GameConnection" TAB "Minigame Minigame");
 
-registerOutputEvent("fxDTSBrick","HitboxMake","vector" TAB "vector" TAB "int 1 9999999 100");
+registerOutputEvent("fxDTSBrick","HitboxMake","vector" TAB "vector" TAB "int 1 9999999 100" TAB "string 200 100");
 registerOutputEvent("fxDTSBrick","HitboxRemove");
 
 
@@ -62,7 +62,7 @@ function fxDTSBrick::onHitboxHit(%brick,%client,%player)
 	$inputTarget_Minigame = getMinigameFromObject(%client);
 }
 
-function fxDTSBrick::HitboxMake(%brick,%size,%offset,%health)
+function fxDTSBrick::HitboxMake(%brick,%size,%offset,%health,%team)
 {
     if(isObject(%brick.hitboxSHape))
     {
@@ -80,10 +80,13 @@ function fxDTSBrick::HitboxMake(%brick,%size,%offset,%health)
         dataBlock = "hitbox_cube";
     };
 
+    missionCleanup.add(%hitbox);
+
     %hitbox.ownerBrick = %brick;
     %hitbox.setMaxHealth(%health);
     UpdateHitboxVisibility(%hitbox);
 
+    %brick.hitBoxTeam = %team;
     %brick.hitboxShape = %hitbox;
     %brick.hitboxHealth = %health;
 
@@ -97,14 +100,31 @@ function fxDTSBrick::HitboxMake(%brick,%size,%offset,%health)
 
 function fxDTSBrick::HitboxRemove(%brick)
 {
-    %brick.hitboxShape.delete();
-    %brick.hitboxShape = "";
-    %brick.hitboxHealth = "";
-    %brick.hitboxBricks = ""; 
+    %hitbox = %brick.hitboxShape;
+
+    if(isObject(%hitbox))
+    {
+        %brick.hitboxShape.delete();
+        %brick.hitboxShape = "";
+        %brick.hitboxHealth = "";
+        %brick.hitBoxTeam = "";
+    }
 }
 
 package mobaHitbox
 {
+    function fxDTSBrick::delete(%brick)
+    {   
+        %brick.HitboxRemove();
+        parent::delete(%brick);
+    }
+
+    function fxDTSBrick::killBrick(%brick)
+    {
+        %brick.HitboxRemove();
+        parent::killBrick(%brick); 
+    }
+
     function UpdateHitboxVisibility(%hitbox)
     {
         if($Server::Hitboxe::Show)

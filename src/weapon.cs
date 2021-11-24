@@ -1,14 +1,24 @@
-registerOutputEvent("Player","WeaponFire","string 200 100" TAB "vector" TAB "string 200 100");
+registerOutputEvent("Player","WeaponFire","string 200 100" TAB "vector" TAB "string 200 100" TAB "string 200 100",true);
 registerOutputEvent("GameConnection","WeaponCooldown","string 200 100");
 registerOutputEvent("GameConnection","WeaponDamage","string 200 100");
 registerOutputEvent("GameConnection","WeaponProjectile","Datablock ProjectileData");
+
+$Server::Moba::WeaponFireAngle = 30;
+$Server::Moba::WeaponFireRange = 30;
 //event that fires the weapon projectile only if it is off cooldown
-function Player::WeaponFire(%player,%speed,%variable,%scale,%client)
+function Player::WeaponFire(%player,%speed,%variable,%scale,%lockon,%client)
 {
-    %scale = %scale + 0;
+    %scale += 0;
+	%speed += 0;
+	%lockon += 0;
     if(%client.activeWeaponCooldown <= getSimTime() && %client.weaponProjectile)
     {
-        %proj = %player.SpawnWeaponProjectile(%speed,%client.weaponProjectile,%variable,1,%client);
+		if(%lockon)
+		{
+			
+		}
+
+        %proj = %player.SpawnWeaponProjectile(%speed,%client.weaponProjectile,%variable,%scale,%client);
         %client.activeWeaponCooldown = getSimTime() + %client.weaponCooldown;
         %proj.isweaponProjectile = true;
     }
