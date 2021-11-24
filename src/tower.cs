@@ -39,24 +39,28 @@ function fxDTSBrick::TowerSchedule(%brick)
         %towerTarget = %brick.towerTarget;
         if(%towerTarget $= "")
         {
-            %members = %minigame.numMembers;
-            for(%i = 0; %i < %members; %i++)
+            %towerPos = %brick.getPosition();
+            InitContainerRadiusSearch( %towerPos,%radius,$TypeMasks::PlayerObjectType);
+            
+            while(%next = ContainerSearchNext())
             {
-                %client = %minigame.member[%i];
-
-                %teamName = %client.getTeam().name;
+                if(%next.getClassName() $= "Player")
+                {
+                    %teamName = %next.client.getTeam().name;
+                }
+                else
+                {
+                    %teamName = %next.getTeam().name;
+                }
+                
                 if(%owningTeam !$= %teamName)
                 {
-                    %player = %client.player;
-                    if(%player)
+                    if(%next)
                     {
-                        %playerPos = %player.getHackPosition();
-                        %towerPos = %brick.getPosition();
-
-                        %distance = vectorDist(%playerPos,%towerPos);
+                        %playerPos = %next.getHackPosition();
+                        %distance = ContainerSearchCurrDist();
                         if(%distance <= %radius && %targetDistance > %distance)
-                        {
-                            %ray = vectorAdd(vectorScale(vectorNormalize(vectorCross(%playerPos, %towerPos)),%radius),%towerPos);
+                        {   
                             %mask = $TypeMasks::StaticObjectType | $TypeMasks::PlayerObjectType | $TypeMasks::FxBrickObjectType;
                             %hit = ContainerRayCast(%towerPos,%playerPos,%mask,%brick);
                             %hit = getWord(%hit,0);
@@ -66,18 +70,19 @@ function fxDTSBrick::TowerSchedule(%brick)
                                 continue;
                             }
 
-                            %towerTarget = %client;
+                            %towerTarget = %next;
                             %targetDistance = %distance;
                         }
                     }
                 }   
+
             }
 
             %brick.towerTarget = %towerTarget;
         }
         else
         {
-            %player = %towerTarget.player;
+            %player = %towerTarget;
             if(%player)
             {
                 %playerPos = %player.getHackPosition();

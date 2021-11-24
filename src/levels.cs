@@ -84,6 +84,41 @@ package MobaLevels
         %client.DisplayMobaHud();
     }
 
+    function ShapeBase::setMaxHealth(%this, %maxHealth)
+    {
+        if(!(%this.getType() & $TypeMasks::PlayerObjectType))
+        {
+            return parent::setMaxHealth(%this, %maxHealth);
+        }
+
+        if(!isObject(%this))
+            return -1;
+
+        if(%maxHealth <= 0)
+            return false;
+
+        %this.maxHealth = mClampF(%maxHealth, 1, 999999);
+
+        %oldHealth = %this.oldHealth;
+
+        if(!%oldHealth)
+        {
+            %oldHealth = %this.maxHealth;
+        }
+
+        if(!%this.health)
+        {
+            %this.health = %this.maxHealth;
+        }
+
+        %this.setHealth(%this.health + %this.maxHealth - %oldHealth);
+        %this.oldMaxHealth = %this.maxHealth;
+        %this.oldHealth = %this.health;
+        
+
+        return true;
+    }
+
     function Armor::onAdd(%this, %obj)
     {
         %client = %Obj.client;        
