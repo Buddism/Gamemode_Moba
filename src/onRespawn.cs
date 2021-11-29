@@ -5,6 +5,8 @@ package mobaOnRespawn
         parent::VCE_initServer();
         hookFunctionToVCEEventFunction("GameConnection","SpawnPlayer","%client","true","","onPlayerRespawn");
 		activateVCEEventFunctionHooks();
+
+        registerSpecialVar(fxDTSbrick,"hitboxhealth","%this.hitboxShape.getHealth()");
     }
 
 };
