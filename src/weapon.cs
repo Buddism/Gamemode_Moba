@@ -4,7 +4,7 @@ registerOutputEvent("GameConnection","WeaponDamage","string 200 100");
 registerOutputEvent("GameConnection","WeaponProjectile","Datablock ProjectileData");
 
 $Server::Moba::WeaponFireAngle = 30;
-$Server::Moba::WeaponFireRange = 30;
+$Server::Moba::LockonRange = 20;
 //event that fires the weapon projectile only if it is off cooldown
 function Player::WeaponFire(%player,%speed,%variable,%scale,%lockon,%client)
 {
@@ -13,15 +13,21 @@ function Player::WeaponFire(%player,%speed,%variable,%scale,%lockon,%client)
 	%lockon += 0;
     if(%client.activeWeaponCooldown <= getSimTime() && %client.weaponProjectile)
     {
-		if(%lockon)
+		%target = getTarget(%player,$Server::Moba::LockonRange,$Server::Moba::WeaponFireAngle,false);
+		if(%lockon && %target)
 		{
-			
+			%proj = %player.spawnHomingWeaponProjectile(%speed,%client.weaponProjectile,%variable,%scale,%target);
+		}
+		else
+		{
+			%proj = %player.SpawnWeaponProjectile(%speed,%client.weaponProjectile,%variable,%scale,%client);
 		}
 
-        %proj = %player.SpawnWeaponProjectile(%speed,%client.weaponProjectile,%variable,%scale,%client);
+        
         %client.activeWeaponCooldown = getSimTime() + %client.weaponCooldown;
         %proj.isweaponProjectile = true;
     }
+
 }
 //event that sets the cooldown
 function GameConnection::WeaponCooldown(%client,%cooldown)
@@ -76,6 +82,102 @@ function Player::SpawnWeaponProjectile(%player, %speed, %projectileData, %varian
 		%p.setScale (%scale SPC %scale SPC %scale);
 	}
     return %p;
+}
+
+function Player::spawnHomingWeaponProjectile(%this,%speed,%projectile,%spread,%scaleFactor,%target)
+{
+
+	if(!isObject(%projectile) || %projectile.getClassName() !$= "ProjectileData")
+		return;
+
+	%obj = -1;
+	if(!isObject(%target))
+    {
+        return;
+    }
+    %obj = %target;
+	if(%obj.getType() & $TypeMasks::PlayerObjectType)
+	{
+		%pos = %obj.getHackPosition();
+	}
+	else
+	{
+		%pos = %obj.getPosition();
+	}
+
+	%start = %this.getHackPosition();
+	
+	%x = getWord(%spread,0);
+	%y = getWord(%spread,1);
+	%z = getWord(%spread,2);
+	
+	%x = %x - (%x * getRandom() * 2);
+	%y = %y - (%y * getRandom() * 2);
+	%z = %z - (%z * getRandom() * 2);
+	
+	%random = %x SPC %y SPC %z;
+	
+	if(%this.lastFireHomingObject == %obj && (getSimTime() - %this.lastFireHomingTime) < 1000)
+	{
+		%delta = vectorSub(%obj.getVelocity(),%this.lastFireHomingVel);
+		%accl = vectorScale(%delta,100/(getSimTime() - %this.lastFireHomingTime));
+	}
+	else
+	{
+		%accl = 0;
+	}
+	
+	%end = %pos;
+	%vec = getProjectileAimVector(%start,%end,%projectile);
+	
+	//Approximate the travel time. This assumes that the time to the adjusted point is the same as the time to the object position
+	//... which it isn't. If you're moving slowly it shouldn't make much of a difference.
+	for(%i=0;%i<5;%i++)
+	{
+		%t = vectorDist(%start,%end) / vectorLen(vectorScale(getWord(%vec,0) SPC getWord(%vec,1),%projectile.muzzleVelocity));
+		%velaccl = vectorScale(%accl,%t);
+		
+		%x = getword(%velaccl,0);
+		%y = getword(%velaccl,1);
+		%z = getWord(%velaccl,2);
+		
+		%x = (%x < 0 ? 0 : %x);
+		%y = (%y < 0 ? 0 : %y);
+		%z = (%z < 0 ? 0 : %z);
+		
+		%vel = vectorAdd(vectorScale(%obj.getVelocity(),%t),%x SPC %y SPC %z);
+		%end = vectorAdd(%pos,%vel);
+		%vec = getProjectileAimVector(%start,%end,%projectile);
+	}	
+	
+	%vel = vectorAdd(vectorScale(%vec,%speed),%random);
+	
+	%this.lastFireHomingObject  = %obj;
+	%this.lastFireHomingTime    = getSimTime();
+	%this.lastFireHomingVel     = %obj.getVelocity();
+	
+	//I can't use ::spawnProjectile to create it because the start place might be different on a non-1x1 brick
+	
+	%p = new Projectile()
+	{
+		dataBlock = %projectile;
+		initialPosition = %start;
+		initialVelocity = %vel;
+		sourceObject = %this;
+		client = %client;
+		sourceClient = %client;
+		sourceSlot = 0;
+		originPoint = %start;
+	};
+	
+	//Projectile quota
+	if(!isObject(%p))
+		return;
+	
+	MissionCleanup.add(%p);
+	%p.setScale(%scaleFactor SPC %scaleFactor SPC %scaleFactor);
+
+	return(%p);
 }
 
 package mobaWeapon

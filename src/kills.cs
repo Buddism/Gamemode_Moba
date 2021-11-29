@@ -1,7 +1,7 @@
 $Server::Moba::DenyThreshold = 0.85;
 $Server::Moba::GoldPerHealthPoint = 0.25;
 $Server::Moba::ExperienceArea = 100;
-$Server::Moba::CreepHealthXP = 0.65;
+$Server::Moba::CreepHealthXP = 0.35;
 $Server::Moba::HeroBaseXP = 100;
 $Server::Moba::HeroXPPerXP = 7.69;
 
@@ -9,12 +9,14 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 {   
     %client = %objA;
     %other = %objB;
-    if(%client.getClassName() $= "GameConnection" && (%other.getClassName() $= "AIPlayer" || %other.getClassName() $= "GameConnection"))
+    if(%client.getClassName() $= "GameConnection" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType))
     {
         %clientTeam = %client.getTeam().name;
         %otherTeam = %other.getTeam().name;
 
-        if(%clientTeam $= %otherTeam)
+        
+
+        if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType)
         {
             %percent = %other.getDamagePercent();
 
@@ -113,7 +115,6 @@ package mobaKills
             %maxHealth = %player.getMaxHealth();
             %exp = getHudElement(%client,"exp");
 
-            gainHudElement(%sourceClient,"lasthits",1);
             giveAreaXp(%sourceClient.getTeam(),%position,%exp / $Server::Moba::HeroXPPerXP + $Server::Moba::HeroBaseXP);
         }
         
@@ -147,7 +148,10 @@ package mobaKills
 
         %this.maxHealth = mClampF(%maxHealth, 1, 999999);
 
-        %this.addHealth(%this.maxHealth - %this.oldMaxHealth);
+				if(%this.health <= 0)
+					%this.health = %this.maxHealth;
+				else
+        	%this.addHealth(%this.maxHealth - %this.oldMaxHealth);
 
         %this.oldMaxHealth = %this.maxHealth;
         %this.oldHealth = %this.health;

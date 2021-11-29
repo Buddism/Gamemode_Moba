@@ -136,6 +136,17 @@ package mobaHitbox
             %hitbox.hideNode("ALL");
         }
     }
+    
+    function StaticShape::GetTeam(%this)
+    {
+        %brick = %this.ownerBrick;
+        %classname = %this.className;
+
+        if(%className $= "HitboxShape")
+        {
+            return %brick.owningTeam;
+        }
+    }
 
     function StaticShape::Damage(%this, %sourceObject, %position, %damage, %damageType)
     {
@@ -181,7 +192,7 @@ package mobaHitbox
             }
         }
         %scale = getWord (%obj.getScale (), 2);
-        %mask = $TypeMasks::StaticObjectType;
+        %mask = $TypeMasks::StaticShapeObjectType;
         if(%mask & %col.getType())
         {
             if(%col.className $= "HitboxShape")
