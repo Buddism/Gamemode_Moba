@@ -3,14 +3,7 @@ if(%error == $Error::Addon_NotFound)
 	error("ERROR: Gamemode_Slayer_Infection - Required add-on Gamemode_Slayer not found!");
 else
 {
-	exec("./src/kills.cs");
-	exec("./src/hud.cs");
-	exec("./src/levels.cs");
-	exec("./src/energy.cs");
-	exec("./src/hitbox.cs");
-	exec("./src/tower.cs");
-	exec("./src/weapon.cs");
-	exec("./src/onRespawn.cs");
+	exec("./src/*");
 }
 
 //Create the game mode template.

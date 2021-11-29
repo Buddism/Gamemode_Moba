@@ -37,7 +37,6 @@ function GameConnection::DisplayMobaHud(%client)
     //bottom print
     %maxHealth = mFloor(%player.getMaxHealth());
     %curhealth = mFloor(%player.getHealth());
-    talk(%maxHealth SPC %curhealth SPC "Hud");
     %healthText = "\c2H " @ makeMobaValueBar(%curhealth,%maxHealth,"|||||||||||||||||||");
 
     %maxMana = mFloor(%client.leveling_maxenergy);

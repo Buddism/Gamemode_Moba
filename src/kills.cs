@@ -9,12 +9,14 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 {   
     %client = %objA;
     %other = %objB;
-    if(%client.getClassName() $= "GameConnection" && (%other.getClassName() $= "AIPlayer" || %other.getClassName() $= "GameConnection"))
+    if(%client.getClassName() $= "GameConnection" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType))
     {
         %clientTeam = %client.getTeam().name;
         %otherTeam = %other.getTeam().name;
 
-        if(%clientTeam $= %otherTeam)
+        
+
+        if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType)
         {
             %percent = %other.getDamagePercent();
 
