@@ -9,7 +9,7 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 {   
     %client = %objA;
     %other = %objB;
-    if(%client.getClassName() $= "GameConnection" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType))
+    if(%client.getClassName() $= "GameConnection" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType)))
     {
         %clientTeam = %client.getTeam().name;
         %otherTeam = %other.getTeam().name;
