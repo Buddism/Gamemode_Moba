@@ -13,10 +13,9 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
     {
         %clientTeam = %client.getTeam().name;
         %otherTeam = %other.getTeam().name;
-
         
 
-        if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType)
+        if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType && %client.player)
         {
             %percent = %other.getDamagePercent();
 
@@ -30,7 +29,7 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
                 return false;
             }
         }
-        else
+        else if(%clientTeam !$= %otherTeam)
         {
             return true;
         }
