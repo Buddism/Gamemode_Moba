@@ -33,6 +33,10 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
         {
             return true;
         }
+        else
+        {
+            return false;
+        }
     }
     return true;
     
