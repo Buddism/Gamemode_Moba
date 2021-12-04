@@ -44,16 +44,13 @@ function fxDTSBrick::TowerSchedule(%brick)
             
             while(%next = ContainerSearchNext())
             {
-                if(%next.getClassName() $= "Player")
+                %minigame = getMinigameFromObject(%next);
+
+                if(!isObject(%minigame))
                 {
-                    %teamName = %next.client.getTeam().name;
+                    continue;
                 }
-                else
-                {
-                    %teamName = %next.getTeam().name;
-                }
-                
-                if(%owningTeam !$= %teamName)
+                if(Slayer_Moba::minigameCanDamage(%minigame,%brick,%next))
                 {
                     if(%next)
                     {

@@ -9,12 +9,55 @@ function Slayer_Moba::minigameCanDamage(%minigame,%objA, %objB)
 {   
     %client = %objA;
     %other = %objB;
-    if(%client.getClassName() $= "GameConnection" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType)))
+
+    if((%client.getClassName() $= "GameConnection" || %client.getClassName() $= "AIPlayer")  && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType)))
     {
         %clientTeam = %client.getTeam().name;
         %otherTeam = %other.getTeam().name;
-        
 
+        if(%other.ownerBrick)
+        {
+            %otherTeam = %other.ownerBrick.TowerTeamOwner;
+        }
+
+        if(%other.client)
+        {
+            %otherTeam = %other.client.getTeam().name;
+        }
+        
+        if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType && %client.player)
+        {
+            %percent = %other.getDamagePercent();
+
+            //are we within threshold?
+            if($Server::Moba::DenyThreshold <= %percent)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else if(%clientTeam !$= %otherTeam)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else if(%client.getClassName() $= "fxDTSBrick" && (%other.getType() & ($TypeMasks::PlayerObjectType | $TypeMasks::StaticShapeObjectType)))
+    {
+        %clientTeam = %client.TowerTeamOwner;
+        %otherTeam = %other.getTeam().name;
+
+        if(%other.client)
+        {
+            %otherTeam = %other.client.getTeam().name;
+        }
+        
         if(%clientTeam $= %otherTeam && %other.getType() & $TypeMasks::PlayerObjectType && %client.player)
         {
             %percent = %other.getDamagePercent();
