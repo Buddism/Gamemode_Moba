@@ -1,6 +1,8 @@
 registerOutputEvent("fxDTSBrick","TowerStart","string 200 100" TAB "int 0 9999999 10" TAB "int 33 9999999 1000" TAB "datablock ProjectileData");
 registerOutputEvent("fxDTSBrick","TowerStop");
 
+function fxdtsbrick::canExplode(){return false;}
+
 function fxDTSBrick::TowerStart(%brick, %teamOwner, %radius, %delay, %projectile)
 {
     if(%brick.TowerGoing)
