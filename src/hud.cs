@@ -277,7 +277,8 @@ package mobaHud
         %tempText = %valueText @ %barText;
         %tempTextLength = strLen(%tempText);
 
-        %availibleValue = mCeil((%curValue / %maxValue) * %tempTextLength);
+		%availibleValue = mCeil((%curValue / %maxValue) * %tempTextLength);
+		%availibleValue = mClamp(%availibleValue * 1, 0, 1000);
 
         %availibleText = getSubStr(%tempText,0,%availibleValue);
         %consumedText = getSubStr(%tempText,%availibleValue, %tempTextLength - %availibleValue);
