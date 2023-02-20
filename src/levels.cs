@@ -17,6 +17,21 @@ function Slayer_Moba::onMinigameReset(%this, %client)
     }
 }
 
+function Slayer_Moba::onClientJoinGame(%this, %client)
+{
+	if(getHudElement(%client, "level") == 0)
+		schedule(100,%client,"resetPlayer",%client);
+}
+
+registerOutputEvent("GameConnection", "initializeStats");
+
+function GameConnection::initializeStats(%client)
+{
+	//delay it just in case
+	%client.schedule(0, updateStats);
+}
+
+
 
 package MobaLevels
 {
@@ -87,8 +102,8 @@ package MobaLevels
 		%baseHealth = getHudElement(%client, "baseHealth");
 		%baseEnergy = getHudElement(%client, "baseEnergy");
 
-        %player.setMaxHealth(%baseHealth * %healthLevel * getHudElement(%client,"healthLevelIncrease"));
-        %player.SetMaxEnergyLevel(%baseEnergy * %manaLevel * getHudElement(%client,"manaLevelIncrease"));
+        %player.setMaxHealth(%baseHealth 	  + %healthLevel * getHudElement(%client,"healthLevelIncrease"));
+        %player.SetMaxEnergyLevel(%baseEnergy + %manaLevel	 * getHudElement(%client,"manaLevelIncrease"));
         %client.DisplayMobaHud();
     }
 
