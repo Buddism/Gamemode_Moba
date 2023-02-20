@@ -1,6 +1,6 @@
 $Server::Moba::MaxLevel = 25;
-$Server::Moba::StartingThreshold = 230;
-$Server::Moba::ThresholdAddition = 40;//(3500 - $Server::Moba::StartingThreshold) / $Server::Moba::MaxLevel;
+$Server::Moba::StartingThreshold = 120;
+$Server::Moba::ThresholdAddition = 15;//(3500 - $Server::Moba::StartingThreshold) / $Server::Moba::MaxLevel;
 $Server::Moba::HealthBase = 100;
 $Server::Moba::ManaBase = 100;
 $Server::Moba::StartingCoins = 625;
@@ -32,6 +32,9 @@ package MobaLevels
         setHudElement(%client,"manaLevelIncrease",1);
         setHudElement(%client,"gold",200);
         setHudElement(%client,"expthreshold",$Server::Moba::StartingThreshold);
+
+        setHudElement(%client, "baseHealth", $Server::Moba::HealthBase);
+		setHudElement(%client, "baseEnergy", $Server::Moba::ManaBase);
 
         updateStats(%client);
     }
@@ -81,8 +84,11 @@ package MobaLevels
             return;
         }
 
-        %player.setMaxHealth($Server::Moba::HealthBase * %healthLevel * getHudElement(%client,"healthLevelIncrease"));
-        %player.SetMaxEnergyLevel($Server::Moba::ManaBase * %manaLevel * getHudElement(%client,"manaLevelIncrease"));
+		%baseHealth = getHudElement(%client, "baseHealth");
+		%baseEnergy = getHudElement(%client, "baseEnergy");
+
+        %player.setMaxHealth(%baseHealth * %healthLevel * getHudElement(%client,"healthLevelIncrease"));
+        %player.SetMaxEnergyLevel(%baseEnergy * %manaLevel * getHudElement(%client,"manaLevelIncrease"));
         %client.DisplayMobaHud();
     }
 
@@ -113,7 +119,7 @@ package MobaLevels
             %this.health = %this.maxHealth;
         }
 
-        %this.setHealth(%this.health + %this.maxHealth - %oldHealth);
+        %this.setHealth(%this.health);
         %this.oldMaxHealth = %this.maxHealth;
         %this.oldHealth = %this.health;
         
