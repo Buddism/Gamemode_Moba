@@ -80,8 +80,8 @@ package MobaLevels
         if(%level < 25)
         {
             gainHudElement(%client,"level",1);
-            gainHudElement(%client,"healthLevel",1);
-            gainHudElement(%client,"manaLevel",1);
+            //gainHudElement(%client,"healthLevel",1);
+            //gainHudElement(%client,"manaLevel",1);
 
             updateStats(%client);
         }
